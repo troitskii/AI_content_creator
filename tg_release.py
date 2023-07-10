@@ -53,7 +53,7 @@ def get_config(list_name):
 
 def main():
     # Load configuration for telegram channels
-    config_telega = get_config('all_done')
+    config_telega = get_config('testing')
     media_plan = get_config('media_plans')
     today = date.today().strftime("%m/%d/%y")
 

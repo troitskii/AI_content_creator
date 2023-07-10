@@ -108,7 +108,7 @@ def summarize_podcast_text(podcast_text):
     return summarized_text
 
 
-def create_mp3(podcast_text):
+def create_mp3(podcast_text, channel_name):
     url = "https://play.ht/api/v2/tts"
     headers = {
         "AUTHORIZATION": playhtauth_key,
@@ -118,7 +118,7 @@ def create_mp3(podcast_text):
     }
     data = {
         "text": podcast_text,
-        "voice": "susan"
+        "voice": get_artist(channel_name)
     }
     response = requests.post(url, headers=headers, json=data)
     text_2 = response.text
@@ -245,7 +245,7 @@ def create_episode(channel_name):
         # Get all data
         get_prompt_result = get_prompt(channel_name)
         podcast_text = create_podcast_text(get_prompt_result)
-        mp3 = create_mp3(podcast_text)
+        mp3 = create_mp3(podcast_text, channel_name)
         artwork = create_artwork(channel_name)
         artist = get_artist(channel_name)
         summary_podcast = summarize_podcast_text(podcast_text)
