@@ -276,7 +276,7 @@ def create_episode(channel_name):
             "inactive_at": None,
             "episode_number": episode_number,
             "season_number": season_number,
-            "explicit": True,
+            "explicit": False,
             "private": False,
             "email_user_after_audio_processed": True,
             "audio_url": mp3,
