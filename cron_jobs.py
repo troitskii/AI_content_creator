@@ -6,14 +6,14 @@ from datetime import datetime
 
 
 def run_script_telega():
-    script_path = 'main.py'
-    os.system(f'C:\\Users\\Administrator\\Desktop\\chatgpt_telega\\chatgpt_telega\\.venv\\Scripts\\python {script_path}')
+    script_path = 'tg_release.py'
+    os.system(f'C:\\Users\\Administrator\\PycharmProjects\\AI_content_creator\\venv\\Scripts\\python {script_path}')
     print(f'Script executed at {datetime.now()}')
 
 
 def run_script_podcast():
-    script_path = 'release_podcast.py'
-    os.system(f'C:\\Users\\Administrator\\Desktop\\chatgpt_telega\\chatgpt_telega\\.venv\\Scripts\\python {script_path}')
+    script_path = 'podcast_release.py'
+    os.system(f'C:\\Users\\Administrator\\PycharmProjects\\AI_content_creator\\venv\\Scripts\\python {script_path}')
     print(f'Script executed at {datetime.now()}')
 
 
