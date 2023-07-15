@@ -5,6 +5,7 @@ from google.oauth2 import service_account
 import pandas as pd
 from datetime import datetime
 import json
+import numpy as np
 
 
 # Load the JSON from file and all keys
@@ -106,7 +107,52 @@ def get_links_list():
     links_list = config_telega['Link'].tolist()
     return links_list
 
+def analyze_results(views, subs):
+    # Transpose the data
+    views_data = views.iloc[:, 1:].transpose()
+    subscribers_data = subs.iloc[:, 1:].transpose()
+
+    # Drop first row
+    subscribers_data.drop(subscribers_data.index[0], inplace=True)
+    views_data.drop(views_data.index[0], inplace=True)
+
+    # Assuming df is your DataFrame
+    resulting_df = pd.DataFrame()
+    resulting_df['views_last_day'] = views_data.iloc[1:, :1].apply(lambda row: np.mean([val for val in row if val < 1000]),
+                                                          axis=1)
+
+    resulting_df['views_avg_7'] = views_data.iloc[1:, :7].apply(lambda row: np.mean([val for val in row if val < 1000]),
+                                                          axis=1)
+    resulting_df['views_avg_30'] = views_data.iloc[1:, :30].apply(lambda row: np.mean([val for val in row if val < 1000]),
+                                                            axis=1)
+    resulting_df['subs_last_day'] = subscribers_data[0]
+    resulting_df['subs_change_7'] = subscribers_data[0] - subscribers_data[6]
+    resulting_df['subs_change_30'] = subscribers_data[0] - subscribers_data[29]
+
+    # Ensure the denominator is not zero to avoid ZeroDivisionError
+    non_zero_denom = subscribers_data[0].copy()
+    non_zero_denom[non_zero_denom == 0] = np.nan
+
+    # Perform the division. This will return NaN where the denominator was zero.
+    resulting_df['efficiency_7'] = resulting_df['views_avg_7'] / non_zero_denom
+
+    # Replace NaN values (where the denominator was zero) with zero.
+    resulting_df['efficiency_7'].fillna(0, inplace=True)
+
+    # Perform the division. This will return NaN where the denominator was zero.
+    resulting_df['efficiency_30'] = resulting_df['views_avg_30'] / non_zero_denom
+
+    # Replace NaN values (where the denominator was zero) with zero.
+    resulting_df['efficiency_30'].fillna(0, inplace=True)
+
+    return resulting_df
+
+
 views = get_views()
 subscribers = get_subscribers()
+
 views.to_csv('view.csv')
 subscribers.to_csv('subscribers.csv')
+
+analytics_results = analyze_results(views, subscribers)
+analytics_results.to_csv('analytics_results.csv')
