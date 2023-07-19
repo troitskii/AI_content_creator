@@ -83,6 +83,8 @@ def create_podcast_text(prompt):
     )
     # Extract the generated text from the response
     podcast_text = response.choices[0].message['content'].strip()
+    podcast_text = podcast_text.replace('[Music fades in]', "")
+    podcast_text = podcast_text.replace('[Music fades out]', "")
     return podcast_text
 
 
