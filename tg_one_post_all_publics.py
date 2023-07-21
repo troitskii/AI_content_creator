@@ -51,6 +51,7 @@ def get_config():
 def main():
     # Load configuration for telegram channels
     config_telega = get_config()
+    config_telega = config_telega[config_telega['Language'] == 'English']
 
     # Initialize error_testing_list to store failed operations
     error_list = []
@@ -59,7 +60,6 @@ def main():
     for index in config_telega.index:
         try:
             # Extract necessary configurations
-            excel = config_telega['Excel'][index]
             password = config_telega['Password'][index]
             link = config_telega['Link'][index]
 
@@ -67,21 +67,22 @@ def main():
             bot = telebot.TeleBot(password)
 
             # Extract the generated text from the response
-            text = 'Всем привет! Мы проводим тестирование качества нашего контента, пожалуйста, пройдите опрос в специальном паблике (https://t.me/testingchatgpt). Мы правда-правда будем очень вам благодарны :) \n \nHello everyone! We are conducting quality testing of our content, please take the survey in our special channel (https://t.me/testingchatgpt). We would be really grateful for your participation :)'
+            text = f'''🎧🍏 Discover the Deliciously Nutritious Journey of "Healthy Food" Podcast! 🥦🎙️
+    
+                        📢 Calling all foodies and health enthusiasts! 🌱🌍 Get ready to tantalize your taste buds and nourish your mind as we unveil our sizzling new podcast, "Healthy Food"! 🎧🔥
+                        
+                        🍎 From scrumptious recipes to mindful eating tips, join us on an epic gastronomic adventure that will transform your relationship with food. 🌽🥕
+                        
+                        🔊 Tune in on all major podcast platforms like Apple, Amazon, Spotify, and more! 🎶🎉 Whether you're a seasoned chef or a curious novice, "Healthy Food" promises to serve up a delectable feast of knowledge and inspiration.
+                        
+                        🗓️ So mark your calendars and prepare your headphones for a wholesome audio experience like no other. Subscribe today and unlock the secrets to a vibrant, nourishing life! 🌿✨
+                        
+                        📲 Don't miss out! Click that play button and let the flavors of "Healthy Food" podcast melt in your ears. It's time to nourish your soul while satisfying your cravings! 🎙️🍽️ \n \n https://www.buzzsprout.com/2180464'''
 
             # Send the message to the channel
             bot.send_message(link, text)
-        except:
-            # Log the failed operation to error_testing_list
-            error_list.append(excel)
-            current_date = datetime.now().strftime("%Y-%m-%d")
-
-            # Write the errors to a CSV file
-            with open('errors.csv', 'w', newline='', encoding='utf-8') as csvfile:
-                csv_writer = csv.writer(csvfile)
-                csv_writer.writerow(['Channel', 'Date'])
-                for string in error_list:
-                    csv_writer.writerow([string, current_date])
+            print(link)
+        except: print('BAD TRY, UNSUCCESSFUL ATTEMPT:'+link)
 
 
 if __name__ == '__main__':

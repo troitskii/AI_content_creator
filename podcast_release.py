@@ -77,7 +77,7 @@ def create_podcast_text(prompt):
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=messages,
-        max_tokens=2000,
+        max_tokens=10000,
         n=1,
         temperature=0,
     )
