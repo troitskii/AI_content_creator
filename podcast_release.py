@@ -246,14 +246,23 @@ def create_episode(channel_name):
 
         # Get all data
         get_prompt_result = get_prompt(channel_name)
+        print('get_prompt_result is ok')
         podcast_text = create_podcast_text(get_prompt_result)
+        print('podcast_text is ok')
         mp3 = create_mp3(podcast_text, channel_name)
+        print('mp3 is ok')
         artwork = create_artwork(channel_name)
+        print('create_artwork is ok')
         artist = get_artist(channel_name)
+        print('artist is ok')
         summary_podcast = summarize_podcast_text(podcast_text)
+        print('summary_podcast is ok')
         tags = create_tags(podcast_text)
+        print('tags is ok')
         season_number = get_season_number(channel_name)
+        print('season_number is ok')
         episode_number = get_episode_number(channel_name)
+        print('episode_number is ok')
 
         # API configuration
         base_url = get_base_url(channel_name)  # Replace 9999 with your podcast identifier
