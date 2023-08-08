@@ -71,13 +71,13 @@ def create_podcast_text(prompt):
     # Create a chat message using OpenAI API
     messages = [
         {"role": "system",
-         "content": 'You need to write an script for a podcast on the given topic. In the podcast there are no guests - the author of the podcast does it alone, so do not divide podcast into roles (author and guest). Do not write titles and chapters. Do not name the chapters - just write what the author needs to read. The text must be long.'},
+         "content": 'You need to write an script for a podcast on the given topic. In the podcast there are no guests - the author of the podcast does it alone, so do not divide podcast into roles (author and guest). Do not write titles and chapters. Do not name the chapters - just write what the author needs to read. The text must be long, but not more than 250 words.'},
         {"role": "user", "content": prompt}
     ]
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=messages,
-        max_tokens=7500,
+        max_tokens=2000,
         n=1,
         temperature=0,
     )
@@ -247,22 +247,31 @@ def create_episode(channel_name):
         # Get all data
         get_prompt_result = get_prompt(channel_name)
         print('get_prompt_result is ok')
+        print(get_prompt_result)
         podcast_text = create_podcast_text(get_prompt_result)
         print('podcast_text is ok')
+        print(podcast_text)
         mp3 = create_mp3(podcast_text, channel_name)
         print('mp3 is ok')
+        print(mp3)
         artwork = create_artwork(channel_name)
         print('create_artwork is ok')
+        print(artwork)
         artist = get_artist(channel_name)
         print('artist is ok')
+        print(artist)
         summary_podcast = summarize_podcast_text(podcast_text)
         print('summary_podcast is ok')
+        print(summary_podcast)
         tags = create_tags(podcast_text)
         print('tags is ok')
+        print(tags)
         season_number = get_season_number(channel_name)
         print('season_number is ok')
+        print(season_number)
         episode_number = get_episode_number(channel_name)
         print('episode_number is ok')
+        print(episode_number)
 
         # API configuration
         base_url = get_base_url(channel_name)  # Replace 9999 with your podcast identifier

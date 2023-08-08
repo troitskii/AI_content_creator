@@ -51,7 +51,7 @@ def get_config():
 def main():
     # Load configuration for telegram channels
     config_telega = get_config()
-    config_telega = config_telega[config_telega['Language'] == 'English']
+    config_telega = config_telega[config_telega['Language'] == 'Russian']
 
     # Initialize error_testing_list to store failed operations
     error_list = []
@@ -67,17 +67,11 @@ def main():
             bot = telebot.TeleBot(password)
 
             # Extract the generated text from the response
-            text = f'''🎧🍏 Discover the Deliciously Nutritious Journey of "Healthy Food" Podcast! 🥦🎙️
-    
-                        📢 Calling all foodies and health enthusiasts! 🌱🌍 Get ready to tantalize your taste buds and nourish your mind as we unveil our sizzling new podcast, "Healthy Food"! 🎧🔥
-                        
-                        🍎 From scrumptious recipes to mindful eating tips, join us on an epic gastronomic adventure that will transform your relationship with food. 🌽🥕
-                        
-                        🔊 Tune in on all major podcast platforms like Apple, Amazon, Spotify, and more! 🎶🎉 Whether you're a seasoned chef or a curious novice, "Healthy Food" promises to serve up a delectable feast of knowledge and inspiration.
-                        
-                        🗓️ So mark your calendars and prepare your headphones for a wholesome audio experience like no other. Subscribe today and unlock the secrets to a vibrant, nourishing life! 🌿✨
-                        
-                        📲 Don't miss out! Click that play button and let the flavors of "Healthy Food" podcast melt in your ears. It's time to nourish your soul while satisfying your cravings! 🎙️🍽️ \n \n https://www.buzzsprout.com/2180464'''
+            text = f'''Приветствую всех! Нам важна ваша обратная связь, поэтому очень просим пройти опрос по качеству нашего контента:
+            
+Пройти опрос можно в нашей группе для опросов https://t.me/testingchatgpt
+            
+Будем вам очень-очень признательны, это займет всего 15 секунд!'''
 
             # Send the message to the channel
             bot.send_message(link, text)
