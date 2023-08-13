@@ -8,6 +8,7 @@ import requests
 import json
 from pydub import AudioSegment
 from io import BytesIO
+import io
 
 
 # Load the JSON from file and all keys
@@ -71,13 +72,13 @@ def create_podcast_text(prompt):
     # Create a chat message using OpenAI API
     messages = [
         {"role": "system",
-         "content": 'You need to write an script for a podcast on the given topic. In the podcast there are no guests - the author of the podcast does it alone, so do not divide podcast into roles (author and guest). Do not write titles and chapters. Do not name the chapters - just write what the author needs to read. The text must be long, but not more than 250 words.'},
+         "content": 'You need to write an script for a podcast on the given topic. In the podcast there are no guests - the author of the podcast does it alone, so do not divide podcast into roles (author and guest). Do not write titles and chapters. Do not name the chapters - just write what the author needs to read. The text must be very long.'},
         {"role": "user", "content": prompt}
     ]
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=messages,
-        max_tokens=2000,
+        max_tokens=8000,
         n=1,
         temperature=0,
     )
@@ -136,6 +137,63 @@ def create_mp3(podcast_text, channel_name):
             url = data_dict.get('url')
             break
     return url
+
+
+def extract_text_part(text, max_words=200):
+    words = text.split()
+
+    # If there's less than max_words, return them all
+    if len(words) <= max_words:
+        return ' '.join(words), ''
+
+    # Gather approximately max_words words
+    subtext_words = words[:max_words]
+
+    # Convert it back to string to find the last period
+    subtext = ' '.join(subtext_words)
+    last_dot_index = subtext.rfind('.')
+
+    # If there's no period, return max_words
+    if last_dot_index == -1:
+        return ' '.join(subtext_words), ' '.join(words[max_words:])
+
+    # Count words up to and including the last dot
+    count_words = len(subtext[:last_dot_index + 1].split())
+    return ' '.join(words[:count_words]), ' '.join(words[count_words:])
+
+
+def process_text(text, channel_name):
+    mp3_list = []
+    while len(text) > 200:
+        part, text = extract_text_part(text)
+        newmp3 = create_mp3(part, channel_name)
+        print(newmp3)
+        if newmp3 is not None:
+            mp3_list.append(newmp3)
+
+    # This part handles the last piece of text which might be less than 200 characters
+    if len(text) > 0:
+        newmp3 = create_mp3(text, channel_name)
+        print(newmp3)
+        if newmp3 is not None:
+            mp3_list.append(newmp3)
+    return mp3_list
+
+
+def download_and_merge_mp3s(links, output_file="output.mp3"):
+
+    combined = AudioSegment.empty()
+
+    for link in links:
+        response = requests.get(link)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+
+        # Create an AudioSegment instance from the downloaded MP3 data
+        audio = AudioSegment.from_mp3(io.BytesIO(response.content))
+        combined += audio
+
+    # Export the combined audio to the specified file
+    combined.export(output_file, format="mp3")
 
 
 def get_artist(channel_name):
@@ -251,7 +309,9 @@ def create_episode(channel_name):
         podcast_text = create_podcast_text(get_prompt_result)
         print('podcast_text is ok')
         print(podcast_text)
-        mp3 = create_mp3(podcast_text, channel_name)
+        download_and_merge_mp3s(process_text(podcast_text, channel_name))
+        with open(r'output.mp3', 'rb') as f:
+            mp3 = {'file': (r'output.mp3', f)}
         print('mp3 is ok')
         print(mp3)
         artwork = create_artwork(channel_name)
