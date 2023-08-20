@@ -2,14 +2,15 @@ from __future__ import print_function
 import openai
 import pandas as pd
 from datetime import date
-from googleapiclient.discovery import build
-from google.oauth2 import service_account
 import requests
 import json
 from pydub import AudioSegment
 from io import BytesIO
 import io
-
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaFileUpload
+from google.oauth2 import service_account
 
 # Load the JSON from file and all keys
 with open('config.json') as file:
@@ -86,6 +87,7 @@ def create_podcast_text(prompt):
     podcast_text = response.choices[0].message['content'].strip()
     podcast_text = podcast_text.replace('[Music fades in]', "")
     podcast_text = podcast_text.replace('[Music fades out]', "")
+    podcast_text = podcast_text.replace('[Music fades]', "")
     return podcast_text
 
 
@@ -137,6 +139,66 @@ def create_mp3(podcast_text, channel_name):
             url = data_dict.get('url')
             break
     return url
+
+
+def upload_google_drive(file_name):
+    SERVICE_ACCOUNT_FILE = 'googleapi.json'
+    SCOPES = ['https://www.googleapis.com/auth/drive']
+
+    # Create credentials using the service account file and the required scopes
+    creds = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+
+    try:
+        # create drive api client
+        service = build('drive', 'v3', credentials=creds)
+
+        file_metadata = {'name': file_name}
+        media = MediaFileUpload(file_name,
+                                mimetype='audio/mp3')
+        # pylint: disable=maybe-no-member
+        file = service.files().create(body=file_metadata, media_body=media,
+                                      fields='id').execute()
+        print(F'File ID: {file.get("id")}')
+
+    except HttpError as error:
+        print(F'An error occurred: {error}')
+        file = None
+
+    return file.get('id')
+
+
+def update_file_permissions(file_id, transfer_ownership=False):
+    SERVICE_ACCOUNT_FILE = 'googleapi.json'
+    SCOPES = ['https://www.googleapis.com/auth/drive']
+    creds = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    # Define the permission update parameters
+    permission_update = {
+        "role": 'reader',
+        "type": 'anyone'
+    }
+
+    # Update ownership if specified
+    if transfer_ownership:
+        permission_update["transferOwnership"] = True
+
+    try:
+        # Update the file's permissions
+        response = drive_service.permissions().create(
+            fileId=file_id, body=permission_update).execute()
+
+        return print(response)
+    except Exception as e:
+        print("An error occurred:", e)
+
+
+def create_audio_link(file_id):
+    audio_link = 'https://drive.google.com/uc?id=' + file_id + '&export=download'
+    return audio_link
 
 
 def extract_text_part(text, max_words=200):
@@ -310,8 +372,9 @@ def create_episode(channel_name):
         print('podcast_text is ok')
         print(podcast_text)
         download_and_merge_mp3s(process_text(podcast_text, channel_name))
-        with open(r'output.mp3', 'rb') as f:
-            mp3 = {'file': (r'output.mp3', f)}
+        file_id = upload_google_drive('output.mp3')
+        update_file_permissions(file_id, transfer_ownership=False)
+        mp3 = create_audio_link(file_id)
         print('mp3 is ok')
         print(mp3)
         artwork = create_artwork(channel_name)
@@ -358,7 +421,7 @@ def create_episode(channel_name):
             "season_number": season_number,
             "explicit": False,
             "private": False,
-            "email_user_after_audio_processed": True,
+            "email_user_after_audio_processed": False,
             "audio_url": mp3,
             "artwork_url": artwork
         }
@@ -385,4 +448,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    create_episode('@foodshealthy')
