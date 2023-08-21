@@ -448,4 +448,4 @@ def main():
 
 
 if __name__ == '__main__':
-    create_episode('@foodshealthy')
+    main()
