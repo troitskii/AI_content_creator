@@ -17,12 +17,19 @@ def run_script_podcast():
     print(f'Script executed at {datetime.now()}')
 
 
+def run_script_telegpt():
+    script_path = 'telegpt_release.py'
+    os.system(f'C:\\Users\\Administrator\\PycharmProjects\\AI_content_creator\\venv\\Scripts\\python {script_path}')
+    print(f'Script executed at {datetime.now()}')
+
+
 # Schedule the task
 daily_time_telega = "10:41"
 daily_time_podcast = "19:31"
+daily_time_telegpt = "11:11"
 schedule.every().day.at(daily_time_telega).do(run_script_telega)
 schedule.every().day.at(daily_time_podcast).do(run_script_podcast)
-
+schedule.every().day.at(daily_time_podcast).do(run_script_telegpt)
 
 # Keep the script running indefinitely to check for scheduled tasks
 while True:
