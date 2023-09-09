@@ -19,6 +19,7 @@ playhtauth_key = data['playhtauth_key']
 playht_user_id = data['playht_user_id']
 buzz_token = data['buzz_token']
 telegpt_token = data['telegpt_token']
+telegpt_bot = data['telegpt_bot']
 
 myHeaders = {
 
@@ -50,7 +51,7 @@ def main():
     for index in config_telega.index:
         try:
             # Extract necessary configurations
-            password = config_telega['Password'][index]
+            password = telegpt_bot
             link = config_telega['Link'][index]
             context_mapping = config_telega['Context'][index]
 
