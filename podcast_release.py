@@ -1,5 +1,5 @@
 from __future__ import print_function
-import openai
+from openai import OpenAI
 import pandas as pd
 from datetime import date
 import requests
@@ -23,6 +23,7 @@ playhtauth_key = data['playhtauth_key']
 playht_user_id = data['playht_user_id']
 buzz_token = data['buzz_token']
 
+client = OpenAI(api_key = openai_key)
 
 def get_config(list_name):
     # Define Google Sheets API service account file and required scopes
@@ -67,8 +68,6 @@ def get_prompt(channel_name):
 
 
 def create_podcast_text(prompt):
-    # Set OpenAI API key
-    openai.api_key = openai_key
 
     # Create a chat message using OpenAI API
     messages = [
@@ -76,7 +75,7 @@ def create_podcast_text(prompt):
          "content": 'You need to write an script for a podcast on the given topic. In the podcast there are no guests - the author of the podcast does it alone, so do not divide podcast into roles (author and guest). Do not write titles and chapters. Do not name the chapters - just write what the author needs to read. The text must be very long.'},
         {"role": "user", "content": prompt}
     ]
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=messages,
         max_tokens=8000,
@@ -92,8 +91,6 @@ def create_podcast_text(prompt):
 
 
 def summarize_podcast_text(podcast_text):
-    # Set OpenAI API key
-    openai.api_key = openai_key
 
     # Create a chat message using OpenAI API
     messages2 = [
@@ -101,7 +98,7 @@ def summarize_podcast_text(podcast_text):
          "content": 'You need to summarize podcast text in 2 - 3 senteces. I will send you the text of the podcast in next message.'},
         {"role": "user", "content": podcast_text}
     ]
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages2,
         max_tokens=100,
@@ -292,8 +289,6 @@ def get_season_number(channel_name):
 
 
 def create_tags(channel_text):
-    # Set OpenAI API key
-    openai.api_key = openai_key
 
     # Create a chat message using OpenAI API
     messages3 = [
@@ -301,7 +296,7 @@ def create_tags(channel_text):
          "content": 'You must write hastags based on the text I will send you.'},
         {"role": "user", "content": channel_text}
     ]
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages3,
         max_tokens=500,
@@ -331,7 +326,8 @@ def get_name(channel_name):
 
 def create_artwork(channel_name):
     # Create an image using OpenAI API
-    response_image = openai.Image.create(
+    response_image = client.images.generate(
+        model="dall-e-3",
         prompt= get_name(channel_name) +'art cover',
         n=1,
         size="1024x1024"

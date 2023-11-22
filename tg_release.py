@@ -1,6 +1,6 @@
 from __future__ import print_function
 import telebot
-import openai
+from openai import OpenAI
 import pandas as pd
 from datetime import date
 from datetime import datetime
@@ -22,6 +22,7 @@ playhtauth_key = data['playhtauth_key']
 playht_user_id = data['playht_user_id']
 buzz_token = data['buzz_token']
 
+client = OpenAI(api_key = openai_key)
 
 def get_config(list_name):
     # Define Google Sheets API service account file and required scopes
@@ -60,9 +61,6 @@ def main():
     # Initialize error_testing_list to store failed operations
     error_list = []
 
-    # Set OpenAI API key
-    openai.api_key = openai_key
-
     # Iterate through each telegram channel configuration
     for index in config_telega.index:
         if config_telega['work'][index] == '1':
@@ -88,7 +86,7 @@ def main():
                 if image_channel == 'yes':
 
                     # Create an image using OpenAI API
-                    response_image = openai.Image.create(
+                    response_image = client.images.generate(
                         prompt=getting_prompt.iloc[0],
                         n=1,
                         size="1024x1024"
@@ -114,7 +112,7 @@ def main():
                          "content": context},
                         {"role": "user", "content": getting_prompt.iloc[0]}
                     ]
-                    response = openai.ChatCompletion.create(
+                    response = client.chat.completions.create(
                         model="gpt-4",
                         messages=messages,
                         max_tokens=1500,

@@ -1,6 +1,6 @@
 from __future__ import print_function
 import telebot
-import openai
+from openai import OpenAI
 import pandas as pd
 from datetime import date
 from datetime import datetime
@@ -27,6 +27,7 @@ myHeaders = {
 
 }
 
+client = OpenAI(api_key = openai_key)
 
 def telegpt_mediaplan(url):
     response = requests.get(url, headers=myHeaders).json()
@@ -43,9 +44,6 @@ def main():
 
     # Initialize error_testing_list to store failed operations
     error_list = []
-
-    # Set OpenAI API key
-    openai.api_key = openai_key
 
     # Iterate through each telegram channel configuration
     for index in config_telega.index:
@@ -79,7 +77,7 @@ def main():
                  "content": context},
                 {"role": "user", "content": getting_prompt.iloc[0]}
             ]
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=messages,
                 max_tokens=1500,
@@ -87,10 +85,13 @@ def main():
                 temperature=0,
             )
             # Extract the generated text from the response
-            text = response.choices[0].message['content'].strip()
+            choices = response.choices
+            message = choices[0].message
+            content = message.content
 
             # Send the message to the channel
-            bot.send_message(link, text)
+            bot.send_message(link, content)
+
         except:
             # Log the failed operation to error_testing_list
             error_list.append(link)
@@ -102,7 +103,6 @@ def main():
                 csv_writer.writerow(['Channel', 'Date'])
                 for string in error_list:
                     csv_writer.writerow([string, current_date])
-
 
 if __name__ == '__main__':
     main()

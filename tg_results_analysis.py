@@ -96,6 +96,7 @@ def get_subscribers():
             df['participants_count'] = df['participants_count'].astype('Int64')
             df['participants_count'] -=2 # every channel has an owner and a bot, need to substract them
             df = df.rename(columns={"participants_count": channel_name})
+            print(config_telega['Link'][index])
             final_subscribers = final_subscribers.merge(df, on='period', how='left')
         final_subscribers = final_subscribers.drop(columns=['participants_count'])
         return final_subscribers
