@@ -56,6 +56,9 @@ def main():
     media_plan = telegpt_mediaplan('https://telegpt.tech/api/1.1/obj/Media_Plan')
     today = date.today().strftime("%m/%d/%y")
 
+    # delete out of bounds values
+    media_plan = remove_out_of_bounds_dates(media_plan, 'datedate')
+
     # Initialize error_testing_list to store failed operations
     error_list = []
 
@@ -80,7 +83,6 @@ def main():
 
             # Getting prompt from media plan
             getting_prompt = media_plan[media_plan['channel'] == link]
-            getting_prompt = remove_out_of_bounds_dates(getting_prompt, 'datedate')
             getting_prompt['datedate'] = pd.to_datetime(getting_prompt['datedate'])
             getting_prompt['datedate'] = getting_prompt['datedate'] + pd.Timedelta(days=1)
             getting_prompt['datedate'] = getting_prompt['datedate'].dt.strftime('%m/%d/%y')
