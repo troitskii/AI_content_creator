@@ -36,6 +36,20 @@ def telegpt_mediaplan(url):
     return response_df
 
 
+def remove_out_of_bounds_dates(df, date_column):
+    # Function to check if date is within pandas datetime bounds
+    def is_valid_date(date_str):
+        try:
+            pd.to_datetime(date_str)
+            return True
+        except pd._libs.tslibs.np_datetime.OutOfBoundsDatetime:
+            return False
+
+    # Apply the check to the specified date column and filter the DataFrame
+    mask = df[date_column].apply(is_valid_date)
+    return df[mask]
+
+
 def main():
     # Load configuration for telegram channels
     config_telega = telegpt_mediaplan('https://telegpt.tech/api/1.1/obj/Telegram_Channel')
@@ -59,12 +73,14 @@ def main():
                 context = 'Ты автор юмористического Телеграм канала. Каждый пост - это шутка на определенную тему на русском языке. Следующее сообщение будет содержать тему шутки.'
             elif context_mapping == 'программирование':
                 context = 'Ты автор Телеграм канала. Каждый пост - это образовательный материал, пример кода с объяснением на определенную тему на русском языке. Следующее сообщение будет содержать тему поста.'
+            else: context = 'Ты автор Телеграм канала. Ты должен писать интересные посты на русском языке, опираясь на реальные цифры и факты. Следующее сообщение будет содержать тему поста.'
 
             # Initialize TeleBot instance with the given token
             bot = telebot.TeleBot(password)
 
             # Getting prompt from media plan
             getting_prompt = media_plan[media_plan['channel'] == link]
+            getting_prompt = remove_out_of_bounds_dates(getting_prompt, 'datedate')
             getting_prompt['datedate'] = pd.to_datetime(getting_prompt['datedate'])
             getting_prompt['datedate'] = getting_prompt['datedate'] + pd.Timedelta(days=1)
             getting_prompt['datedate'] = getting_prompt['datedate'].dt.strftime('%m/%d/%y')
