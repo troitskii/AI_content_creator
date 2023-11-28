@@ -58,6 +58,9 @@ def main():
 
     # delete out of bounds values
     media_plan = remove_out_of_bounds_dates(media_plan, 'datedate')
+    media_plan['datedate'] = pd.to_datetime(media_plan['datedate'])
+    media_plan['datedate'] = media_plan['datedate'].dt.strftime('%m/%d/%y')
+    media_plan = media_plan[media_plan['datedate'] == today]
 
     # Initialize error_testing_list to store failed operations
     error_list = []
@@ -83,10 +86,6 @@ def main():
 
             # Getting prompt from media plan
             getting_prompt = media_plan[media_plan['channel'] == link]
-            getting_prompt['datedate'] = pd.to_datetime(getting_prompt['datedate'])
-            getting_prompt['datedate'] = getting_prompt['datedate'] + pd.Timedelta(days=1)
-            getting_prompt['datedate'] = getting_prompt['datedate'].dt.strftime('%m/%d/%y')
-            getting_prompt = getting_prompt[getting_prompt['datedate'] == today]
             getting_prompt = getting_prompt['prompt_human']
 
             # Create a chat message using OpenAI API
