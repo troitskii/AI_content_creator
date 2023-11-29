@@ -64,7 +64,6 @@ def main():
     # Iterate through each telegram channel configuration
     for index in config_telega.index:
         if config_telega['work'][index] == '1':
-            try:
                 # Extract necessary configurations
                 image_channel = config_telega['Image_channel'][index]
                 password = config_telega['Password'][index]
@@ -81,6 +80,7 @@ def main():
                     '%m/%d/%y')
                 getting_prompt = getting_prompt[getting_prompt['datedate'] == today]
                 getting_prompt = getting_prompt['prompt_human']
+                print(getting_prompt)
 
                 # Check if the channel requires an image
                 if image_channel == 'yes':
@@ -91,8 +91,10 @@ def main():
                         n=1,
                         size="1024x1024"
                     )
+
                     # Extract image URL from the response
-                    image_url = response_image['data'][0]['url']
+                    df = pd.DataFrame([image.__dict__ for image in response_image.data])
+                    image_url = df["url"].iloc[0]
 
                     response = requests.get(f'https://api.telegram.org/bot{password}/sendPhoto', {
                         'photo': image_url,
@@ -119,22 +121,14 @@ def main():
                         n=1,
                         temperature=0,
                     )
-                    # Extract the generated text from the response
-                    text = response.choices[0].message['content'].strip()
+                    print(response)
+                    choices = response.choices
+                    message = choices[0].message
+                    content = message.content
 
                     # Send the message to the channel
-                    bot.send_message(link, text)
-            except:
-                # Log the failed operation to error_testing_list
-                error_list.append(link)
-                current_date = datetime.now().strftime("%Y-%m-%d")
+                    bot.send_message(link, content)
 
-                # Write the errors to a CSV file
-                with open('errors.csv', 'w', newline='', encoding='utf-8') as csvfile:
-                    csv_writer = csv.writer(csvfile)
-                    csv_writer.writerow(['Channel', 'Date'])
-                    for string in error_list:
-                        csv_writer.writerow([string, current_date])
         else: pass
 
 
