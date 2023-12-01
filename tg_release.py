@@ -121,7 +121,6 @@ def main():
                         n=1,
                         temperature=0,
                     )
-                    print(response)
                     choices = response.choices
                     message = choices[0].message
                     content = message.content

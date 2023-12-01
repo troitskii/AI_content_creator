@@ -59,19 +59,22 @@ def main():
     # delete out of bounds values
     media_plan = remove_out_of_bounds_dates(media_plan, 'datedate')
     media_plan['datedate'] = pd.to_datetime(media_plan['datedate'])
+    media_plan['datedate'] = media_plan['datedate'] + pd.Timedelta(days=1)
     media_plan['datedate'] = media_plan['datedate'].dt.strftime('%m/%d/%y')
     media_plan = media_plan[media_plan['datedate'] == today]
+    media_plan.rename(columns={'channel': 'Link'}, inplace=True)
+    result = pd.merge(media_plan, config_telega[['Link', 'Context']], on='Link', how='left')
 
     # Initialize error_testing_list to store failed operations
     error_list = []
 
     # Iterate through each telegram channel configuration
-    for index in config_telega.index:
+    for index in result.index:
         try:
             # Extract necessary configurations
             password = telegpt_bot
-            link = config_telega['Link'][index]
-            context_mapping = config_telega['Context'][index]
+            link = result['Link'][index]
+            context_mapping = result['Context'][index]
 
             if context_mapping == 'познавательный' or context_mapping == 'путешествия' or context_mapping == 'технологии' or context_mapping == 'бизнес' or context_mapping == 'спорт' or context_mapping == 'крипто' or context_mapping == 'ставки, казино':
                 context = 'Ты автор Телеграм канала. Ты должен писать интересные посты на русском языке, опираясь на реальные цифры и факты. Следующее сообщение будет содержать тему поста.'
@@ -85,7 +88,7 @@ def main():
             bot = telebot.TeleBot(password)
 
             # Getting prompt from media plan
-            getting_prompt = media_plan[media_plan['channel'] == link]
+            getting_prompt = result[result['Link'] == link]
             getting_prompt = getting_prompt['prompt_human']
 
             # Create a chat message using OpenAI API
@@ -120,6 +123,7 @@ def main():
                 csv_writer.writerow(['Channel', 'Date'])
                 for string in error_list:
                     csv_writer.writerow([string, current_date])
+
 
 if __name__ == '__main__':
     main()

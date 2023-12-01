@@ -330,10 +330,10 @@ def create_artwork(channel_name):
         model="dall-e-3",
         prompt= get_name(channel_name) +'art cover',
         n=1,
-        size="1024x1024"
+        size="512x512"
     )
-    # Extract image URL from the response
-    image_url = response_image['data'][0]['url']
+    df = pd.DataFrame([image.__dict__ for image in response_image.data])
+    image_url = df["url"].iloc[0]
     return image_url
 
 
