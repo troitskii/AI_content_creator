@@ -59,7 +59,7 @@ def main():
     # delete out of bounds values
     media_plan = remove_out_of_bounds_dates(media_plan, 'datedate')
     media_plan['datedate'] = pd.to_datetime(media_plan['datedate'])
-    media_plan['datedate'] = media_plan['datedate'] + pd.Timedelta(days=1)
+    media_plan['datedate'] = media_plan['datedate'] + pd.Timedelta(hours=3)
     media_plan['datedate'] = media_plan['datedate'].dt.strftime('%m/%d/%y')
     media_plan = media_plan[media_plan['datedate'] == today]
     media_plan.rename(columns={'channel': 'Link'}, inplace=True)
