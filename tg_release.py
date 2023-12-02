@@ -54,7 +54,7 @@ def get_config(list_name):
 
 def main():
     # Load configuration for telegram channels
-    config_telega = get_config('testing')
+    config_telega = get_config('all_done')
     media_plan = get_config('media_plans')
     today = date.today().strftime("%m/%d/%y")
 
@@ -70,6 +70,7 @@ def main():
                 password = config_telega['Password'][index]
                 link = config_telega['Link'][index]
                 context = config_telega['Context'][index]
+                print(link)
 
                 # Initialize TeleBot instance with the given token
                 bot = telebot.TeleBot(password)
@@ -81,7 +82,7 @@ def main():
                     '%m/%d/%y')
                 getting_prompt = getting_prompt[getting_prompt['datedate'] == today]
                 getting_prompt = getting_prompt['prompt_human']
-                print(getting_prompt)
+
 
                 # Check if the channel requires an image
                 if image_channel == 'yes':
@@ -131,16 +132,22 @@ def main():
             except:
                 # Log the failed operation to error_testing_list
                 error_list.append(link)
-                current_date = datetime.now().strftime("%Y-%m-%d")
+                current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                # Write the errors to a CSV file
-                with open('errors_tg.csv', 'w', newline='', encoding='utf-8') as csvfile:
+                # Open the CSV file in append mode
+                with open('errors_tg.csv', 'a', newline='', encoding='utf-8') as csvfile:
                     csv_writer = csv.writer(csvfile)
-                    csv_writer.writerow(['Channel', 'Date'])
+
+                    # Check if the file is empty, if so, write the headers
+                    if csvfile.tell() == 0:
+                        csv_writer.writerow(['Channel', 'Date'])
+
+                    # Write the errors
                     for string in error_list:
                         csv_writer.writerow([string, current_date])
 
         else: pass
+
 
 
 if __name__ == '__main__':

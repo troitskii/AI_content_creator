@@ -24,9 +24,9 @@ def run_script_telegpt():
 
 
 # Schedule the task
-daily_time_telega = "07:41"
+daily_time_telega = "08:41"
 daily_time_podcast = "18:39"
-daily_time_telegpt = "14:11"
+daily_time_telegpt = "08:11"
 schedule.every().day.at(daily_time_telega).do(run_script_telega)
 schedule.every().day.at(daily_time_podcast).do(run_script_podcast)
 schedule.every().day.at(daily_time_telegpt).do(run_script_telegpt)

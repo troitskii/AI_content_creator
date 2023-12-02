@@ -89,13 +89,13 @@ def main():
 
             # Getting prompt from media plan
             getting_prompt = result[result['Link'] == link]
-            getting_prompt = getting_prompt['prompt_human']
+            getting_prompt = getting_prompt['prompt_human'][index]
 
             # Create a chat message using OpenAI API
             messages = [
                 {"role": "system",
                  "content": context},
-                {"role": "user", "content": getting_prompt.iloc[0]}
+                {"role": "user", "content": getting_prompt}
             ]
             response = client.chat.completions.create(
                 model="gpt-4",
@@ -112,15 +112,21 @@ def main():
             # Send the message to the channel
             bot.send_message(link, content)
 
+
         except:
+
             # Log the failed operation to error_testing_list
             error_list.append(link)
-            current_date = datetime.now().strftime("%Y-%m-%d")
+            current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # Write the errors to a CSV file
-            with open('errors_telegpt.csv', 'w', newline='', encoding='utf-8') as csvfile:
+            # Open the CSV file in append mode
+            with open('errors_telegpt.csv', 'a', newline='', encoding='utf-8') as csvfile:
                 csv_writer = csv.writer(csvfile)
-                csv_writer.writerow(['Channel', 'Date'])
+                # Check if the file is empty, if so, write the headers
+                if csvfile.tell() == 0:
+                    csv_writer.writerow(['Channel', 'Date'])
+
+                # Write the errors
                 for string in error_list:
                     csv_writer.writerow([string, current_date])
 
