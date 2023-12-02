@@ -64,6 +64,7 @@ def main():
     # Iterate through each telegram channel configuration
     for index in config_telega.index:
         if config_telega['work'][index] == '1':
+            try:
                 # Extract necessary configurations
                 image_channel = config_telega['Image_channel'][index]
                 password = config_telega['Password'][index]
@@ -127,6 +128,17 @@ def main():
 
                     # Send the message to the channel
                     bot.send_message(link, content)
+            except:
+                # Log the failed operation to error_testing_list
+                error_list.append(link)
+                current_date = datetime.now().strftime("%Y-%m-%d")
+
+                # Write the errors to a CSV file
+                with open('errors_tg.csv', 'w', newline='', encoding='utf-8') as csvfile:
+                    csv_writer = csv.writer(csvfile)
+                    csv_writer.writerow(['Channel', 'Date'])
+                    for string in error_list:
+                        csv_writer.writerow([string, current_date])
 
         else: pass
 
