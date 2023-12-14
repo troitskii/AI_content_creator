@@ -98,7 +98,7 @@ def remove_out_of_bounds_dates(df, date_column):
     return df[mask]
 
 
-def working_count_telegpt():
+def working_count_telegpt_prompts_daily():
         # Load everything
         response = requests.get('https://telegpt.tech/api/1.1/obj/Media_Plan', headers=myHeaders).json()
         response = response['response']['results']
@@ -114,9 +114,9 @@ def working_count_telegpt():
         media_plan.rename(columns={'channel': 'Link'}, inplace=True)
 
         # Start saving the thing
-        working_channels_count = len(media_plan)
+        telegpt_prompts = len(media_plan)
         current_date = datetime.now().strftime("%Y-%m-%d")
-        data_to_append = [current_date, working_channels_count]
+        data_to_append = [current_date, telegpt_prompts]
         filename = 'telegpt_working_channels_daily.csv'
 
         # Check if the file exists, if not, create it and write the header
@@ -126,7 +126,7 @@ def working_count_telegpt():
         except FileNotFoundError:
             with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                 csv_writer = csv.writer(csvfile)
-                csv_writer.writerow(['date', 'number of working_channels_tg'])
+                csv_writer.writerow(['date', 'number of telegpt_prompts'])
 
         # Append data to the CSV file
         with open(filename, 'a', newline='', encoding='utf-8') as csvfile:
@@ -142,4 +142,4 @@ if __name__ == '__main__':
     working_count_tg()
 
 if __name__ == '__main__':
-    working_count_telegpt()
+    working_count_telegpt_prompts_daily()

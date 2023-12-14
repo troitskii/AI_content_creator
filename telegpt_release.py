@@ -50,6 +50,18 @@ def remove_out_of_bounds_dates(df, date_column):
     return df[mask]
 
 
+def correct_year(df, column):
+    # Function to correct individual year
+    def correct_year_for_date(date):
+        if date.year < 100:  # Assuming any year less than 100 is incorrect
+            return date.replace(year=date.year + 2000)
+        return date
+
+    # Apply the correction function to the specified column
+    df[column] = df[column].apply(correct_year_for_date)
+    return df
+
+
 def main():
     # Load configuration for telegram channels
     config_telega = telegpt_mediaplan('https://telegpt.tech/api/1.1/obj/Telegram_Channel')
@@ -57,7 +69,7 @@ def main():
     today = date.today().strftime("%m/%d/%y")
 
     # delete out of bounds values
-    media_plan = remove_out_of_bounds_dates(media_plan, 'datedate')
+    media_plan = correct_year(media_plan, 'datedate')
     media_plan['datedate'] = pd.to_datetime(media_plan['datedate'])
     media_plan['datedate'] = media_plan['datedate'] + pd.Timedelta(hours=3)
     media_plan['datedate'] = media_plan['datedate'].dt.strftime('%m/%d/%y')
