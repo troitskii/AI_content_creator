@@ -126,7 +126,6 @@ def main():
 
 
         except:
-
             # Log the failed operation to error_testing_list
             error_list.append(link)
             current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
