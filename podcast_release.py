@@ -67,12 +67,11 @@ def get_prompt(channel_name):
     return getting_prompt
 
 
-def create_podcast_text(prompt):
-
+def create_podcast_heading(prompt):
     # Create a chat message using OpenAI API
     messages = [
         {"role": "system",
-         "content": 'You need to write an script for a podcast on the given topic. In the podcast there are no guests - the author of the podcast does it alone, so do not divide podcast into roles (author and guest). Do not write titles and chapters. Do not name the chapters - just write what the author needs to read. The text must be very long.'},
+         "content": 'You need to write table of contents on a given topic. Table of contents will be further used to write a script for a podcast based on it. PLease numerate your plan. Please make 5 chapters - not less, not more. Do not make chapters like appendix, references.'},
         {"role": "user", "content": prompt}
     ]
     response = client.chat.completions.create(
@@ -82,9 +81,13 @@ def create_podcast_text(prompt):
         n=1,
         temperature=0,
     )
+
     # Extract the generated text from the response
-    podcast_text = response.choices[0].message['content'].strip()
-    podcast_text = podcast_text.replace('[Music fades in]', "")
+    podcast_text = response.choices
+    message = podcast_text[0].message
+    content = message.content
+
+    podcast_text = content.replace('[Music fades in]', "")
     podcast_text = podcast_text.replace('[Music fades out]', "")
     podcast_text = podcast_text.replace('[Music fades]', "")
     return podcast_text
@@ -364,7 +367,7 @@ def create_episode(channel_name):
         get_prompt_result = get_prompt(channel_name)
         print('get_prompt_result is ok')
         print(get_prompt_result)
-        podcast_text = create_podcast_text(get_prompt_result)
+        podcast_text = create_podcast_text(get_prompt_result, 1)
         print('podcast_text is ok')
         print(podcast_text)
         download_and_merge_mp3s(process_text(podcast_text, channel_name))
@@ -443,5 +446,56 @@ def main():
         else: pass
 
 
-if __name__ == '__main__':
-    main()
+def create_podcast_text(prompt, heading, chapter_number, previous_chapter_text):
+
+    # Create a chat message using OpenAI API
+    messages = [
+        {"role": "system",
+         "content": f'You need to write a script for a podcast on the topic {prompt} and chapter {chapter_number} from table of contents:{heading}. The script must be as short possible: at most 200 words. In the podcast there are no guests - the author of the podcast does it alone, so do not divide podcast into roles (author and guest). Do not forget to write the name of the topic in the beginning of the first sentence. Do not write titles and chapters. Do not name the chapters - just write what the author needs to read. Do not write conclusions and do not say goodbye or hello to the listener, take in mind what you wrute could be a part of a bigger text. What you write will the continuation of the text: {previous_chapter_text}. '},
+        {"role": "user", "content": prompt}
+    ]
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=messages,
+        max_tokens=200,
+        n=1,
+        temperature=0,
+    )
+    print(response)
+
+    # Extract the generated text from the response
+    podcast_text = response.choices
+    message = podcast_text[0].message
+    content = message.content
+
+    podcast_text = content.replace('[Music fades in]', "")
+    podcast_text = podcast_text.replace('[Music fades out]', "")
+    podcast_text = podcast_text.replace('[Music fades]', "")
+    return podcast_text
+
+
+def generate_podcast_series(prompt):
+    podcast_heading = create_podcast_heading(prompt)
+    print(podcast_heading)
+
+    # Initialize united text without the initial prompt, to be added before each chapter text
+    united_text = ''
+
+    # Loop through chapters
+    for chapter in range(1, 6):
+        chapter_text = create_podcast_text(prompt, podcast_heading, chapter, chapter - 1)
+        # Concatenate each chapter with a newline and include the prompt with each chapter text
+        united_text += f"\n{prompt} {chapter_text}"
+
+    return united_text
+
+# Example usage:
+prompt = 'Good sleep'
+united_text = generate_podcast_series(prompt)
+
+# Filename for the united text
+filename = "united_text.txt"
+
+# Save the united text to the file in the current (default) directory
+with open(filename, 'w') as file:
+    file.write(united_text)
