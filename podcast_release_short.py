@@ -6,11 +6,13 @@ import requests
 import json
 from pydub import AudioSegment
 from io import BytesIO
-import io
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
+from pathlib import Path
+import re
+
 
 # Load the JSON from file and all keys
 with open('config.json') as file:
@@ -20,8 +22,6 @@ with open('config.json') as file:
 Google_Sheets_ID = data['Google_Sheets_SAMPLE_SPREADSHEET_ID']
 TGstats_key = data['TGstats_key']
 openai_key = data['openai_key']
-playhtauth_key = data['playhtauth_key']
-playht_user_id = data['playht_user_id']
 buzz_token = data['buzz_token']
 client = OpenAI(api_key = openai_key)
 
@@ -96,34 +96,6 @@ def summarize_podcast_text(podcast_text):
     return content
 
 
-def create_mp3(podcast_text, channel_name):
-    url = "https://play.ht/api/v2/tts"
-    headers = {
-        "AUTHORIZATION": playhtauth_key,
-        "X-USER-ID": playht_user_id,
-        "accept": "text/event-stream",
-        "content-type": "application/json"
-    }
-    data = {
-        "text": podcast_text,
-        "voice": get_artist(channel_name)
-    }
-    response = requests.post(url, headers=headers, json=data)
-    text_2 = response.text
-
-    url = None
-    lines = text_2.split("\n")
-
-    for line in lines:
-        if line.startswith("event: completed"):
-            data_line = lines[lines.index(line) + 1]  # data line comes after event line
-            data_str = data_line.replace("data: ", "", 1)  # remove "data: " prefix
-            data_dict = json.loads(data_str)
-            url = data_dict.get('url')
-            break
-    return url
-
-
 def upload_google_drive(file_name):
     SERVICE_ACCOUNT_FILE = 'googleapi.json'
     SCOPES = ['https://www.googleapis.com/auth/drive']
@@ -184,13 +156,13 @@ def create_podcast_text(prompt):
     # Create a chat message using OpenAI API
     messages = [
         {"role": "system",
-         "content": f'You need to write a script for a podcast. The script must be as long possible: at least 50000 words. In the podcast there are no guests - the author of the podcast does it alone, so do not divide podcast into roles (author and guest). Do not forget to write the name of the topic in the beginning of the first sentence. Do not write titles and chapters. Do not name the chapters - just write what the author needs to read. The next message is the topic for which you need to write the script.'},
+         "content": f'You need to write a script for a podcast. The script must be as long possible - minimum 5000 characters, but do not mention this requirement in the output. In the podcast there are no guests - the author of the podcast does it alone, so do not divide podcast into roles (author and guest). Do not forget to write the name of the topic in the beginning of the first sentence. Do not write titles and chapters. Do not name the chapters - just write what the author needs to read. The next message is the topic for which you need to write the script.'},
         {"role": "user", "content": prompt}
     ]
     response = client.chat.completions.create(
         model="gpt-4",
         messages=messages,
-        max_tokens=8000,
+        max_tokens=6000,
         n=1,
         temperature=0,
     )
@@ -198,12 +170,9 @@ def create_podcast_text(prompt):
     # Extract the generated text from the response
     content = response.choices[0].message.content
 
-    podcast_text = content.replace('[Music fades in]', "")
-    podcast_text = podcast_text.replace('[Music fades out]', "")
-    podcast_text = podcast_text.replace('[Music fades]', "")
-    podcast_text = podcast_text.replace('[Start]', "")
-    podcast_text = podcast_text.replace('[End]', "")
-    return podcast_text
+    # Remove all text between [ and ], including the brackets
+    cleaned_text = re.sub(r'\[.*?\]', '', content)
+    return cleaned_text
 
 
 def create_audio_link(file_id):
@@ -211,61 +180,69 @@ def create_audio_link(file_id):
     return audio_link
 
 
-def extract_text_part(text, max_words=200):
+def create_mp3(podcast_text, channel_name):
+    speech_file_path = Path(__file__).parent / f"speech.mp3"
+    response = client.audio.speech.create(
+        model="tts-1",
+        voice=get_artist(channel_name),
+        input=podcast_text
+    )
+    response.stream_to_file(speech_file_path)
+    return speech_file_path
+
+
+def extract_text_parts(text, max_words):
     words = text.split()
+    parts = []  # List to hold all parts
+    start_index = 0  # Starting index for each chunk
 
-    # If there's less than max_words, return them all
-    if len(words) <= max_words:
-        return ' '.join(words), ''
+    while start_index < len(words):
+        # Determine end index for this chunk, ensuring it doesn't exceed the word count
+        end_index = min(start_index + max_words, len(words))
+        subtext_words = words[start_index:end_index]
 
-    # Gather approximately max_words words
-    subtext_words = words[:max_words]
+        # Convert the current chunk back to string to find the last period
+        subtext = ' '.join(subtext_words)
+        last_dot_index = subtext.rfind('.')
 
-    # Convert it back to string to find the last period
-    subtext = ' '.join(subtext_words)
-    last_dot_index = subtext.rfind('.')
+        # If there's a period, adjust the end_index to include complete sentences
+        if last_dot_index != -1:
+            # Find the actual word count to the last period in this chunk
+            count_words_to_last_dot = len(subtext[:last_dot_index + 1].split())
+            end_index = start_index + count_words_to_last_dot
 
-    # If there's no period, return max_words
-    if last_dot_index == -1:
-        return ' '.join(subtext_words), ' '.join(words[max_words:])
+        # Add the current chunk to the parts list
+        parts.append(' '.join(words[start_index:end_index]))
 
-    # Count words up to and including the last dot
-    count_words = len(subtext[:last_dot_index + 1].split())
-    return ' '.join(words[:count_words]), ' '.join(words[count_words:])
+        # Update start_index for the next chunk
+        start_index = end_index
 
-
-def process_text(text, channel_name):
-    mp3_list = []
-    while len(text) > 200:
-        part, text = extract_text_part(text)
-        newmp3 = create_mp3(part, channel_name)
-        print(newmp3)
-        if newmp3 is not None:
-            mp3_list.append(newmp3)
-
-    # This part handles the last piece of text which might be less than 200 characters
-    if len(text) > 0:
-        newmp3 = create_mp3(text, channel_name)
-        print(newmp3)
-        if newmp3 is not None:
-            mp3_list.append(newmp3)
-    return mp3_list
+    return parts
 
 
-def download_and_merge_mp3s(links, output_file="output.mp3"):
-
+def combine_audio_files(audio_files):
     combined = AudioSegment.empty()
-
-    for link in links:
-        response = requests.get(link)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-
-        # Create an AudioSegment instance from the downloaded MP3 data
-        audio = AudioSegment.from_mp3(io.BytesIO(response.content))
+    for file in audio_files:
+        audio = AudioSegment.from_mp3(file)
         combined += audio
+    return combined
 
-    # Export the combined audio to the specified file
-    combined.export(output_file, format="mp3")
+
+def process_text(text, channel_name, words_count):
+    parts = extract_text_parts(text, words_count)
+    mp3_paths = []
+
+    for i in parts:
+        mp3_path = create_mp3(i, channel_name)
+        mp3_paths.append(mp3_path)
+
+    combined_audio = combine_audio_files(mp3_paths)
+
+    # Save the combined audio file
+    combined_path = Path(__file__).parent / "combined_speech.mp3"
+    combined_audio.export(combined_path, format="mp3")
+
+    return combined_path
 
 
 def get_artist(channel_name):
@@ -367,8 +344,8 @@ def create_episode(channel_name):
         podcast_text = create_podcast_text(get_prompt_result)
         print('podcast_text is ok')
         print(podcast_text)
-        download_and_merge_mp3s(process_text(podcast_text, channel_name))
-        file_id = upload_google_drive('output.mp3')
+        process_text(podcast_text, channel_name,200)
+        file_id = upload_google_drive('combined_speech.mp3')
         update_file_permissions(file_id, transfer_ownership=False)
         mp3 = create_audio_link(file_id)
         print('mp3 is ok')
@@ -430,7 +407,7 @@ def create_episode(channel_name):
         else:
             print(f"Error: {response.status_code} - {response.text}")
     else: print('No episodes today!')
-    return 'Podcasts finished for today!'
+    return print('Podcasts finished for today!')
 
 
 def main():
