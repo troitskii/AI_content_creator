@@ -1,6 +1,5 @@
 from __future__ import print_function
 from openai import OpenAI
-import pandas as pd
 from datetime import date
 import requests
 import json
@@ -12,6 +11,9 @@ from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
 from pathlib import Path
 import re
+import pandas as pd
+from datetime import datetime
+import os
 
 
 # Load the JSON from file and all keys
@@ -220,27 +222,20 @@ def extract_text_parts(text, max_words):
     return parts
 
 
-def combine_audio_files(audio_files):
-    combined = AudioSegment.empty()
-    for file in audio_files:
-        audio = AudioSegment.from_mp3(file)
-        combined += audio
-    return combined
-
-
 def process_text(text, channel_name, words_count):
     parts = extract_text_parts(text, words_count)
-    mp3_paths = []
+    combined = AudioSegment.empty()
 
     for i in parts:
+        print(i)
         mp3_path = create_mp3(i, channel_name)
-        mp3_paths.append(mp3_path)
-
-    combined_audio = combine_audio_files(mp3_paths)
+        print(mp3_path)
+        audio = AudioSegment.from_mp3(mp3_path)
+        combined += audio
 
     # Save the combined audio file
     combined_path = Path(__file__).parent / "combined_speech.mp3"
-    combined_audio.export(combined_path, format="mp3")
+    combined.export(combined_path, format="mp3")
 
     return combined_path
 
@@ -344,7 +339,7 @@ def create_episode(channel_name):
         podcast_text = create_podcast_text(get_prompt_result)
         print('podcast_text is ok')
         print(podcast_text)
-        process_text(podcast_text, channel_name,200)
+        process_text(podcast_text, channel_name, 200)
         file_id = upload_google_drive('combined_speech.mp3')
         update_file_permissions(file_id, transfer_ownership=False)
         mp3 = create_audio_link(file_id)
@@ -406,7 +401,8 @@ def create_episode(channel_name):
             print(episode)
         else:
             print(f"Error: {response.status_code} - {response.text}")
-    else: print('No episodes today!')
+    else:
+        print('No episodes today!')
     return print('Podcasts finished for today!')
 
 
@@ -414,15 +410,41 @@ def main():
     # Load configuration for Podcasts
     config_telega = get_config('all_done')
 
+    # Prepare a list to hold the records
+    records = []
+
     # Iterate through each telegram channel configuration
     for index in config_telega.index:
         if config_telega['Podcast'][index] == '1':
             try:
                 create_episode(config_telega['Link'][index])
+                # If successful, add a record with a "Success" value of 1
+                records.append(
+                    {"Link": config_telega['Link'][index], "Date": datetime.today().strftime('%Y-%m-%d'), "Success": 1})
             except Exception:
-                pass  # If an error occurs, it is ignored
+                # If an error occurs, add a record with a "Success" value of 0
+                records.append(
+                    {"Link": config_telega['Link'][index], "Date": datetime.today().strftime('%Y-%m-%d'), "Success": 0})
         else:
             pass
+
+    # Convert the records into a DataFrame
+    new_records_df = pd.DataFrame(records)
+
+    # Specify the filename and path for the Excel file
+    filename = 'episode_creation_log.xlsx'
+
+    # Check if the file exists
+    if os.path.exists(filename):
+        # Read the existing data into a DataFrame
+        existing_df = pd.read_excel(filename)
+        # Append the new records to the existing DataFrame
+        updated_df = existing_df.append(new_records_df, ignore_index=True)
+    else:
+        updated_df = new_records_df
+
+    # Write the updated DataFrame to the Excel file
+    updated_df.to_excel(filename, index=False)
 
 
 main()
