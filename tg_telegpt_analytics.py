@@ -18,20 +18,32 @@ def update_analytics_spreadsheet(file_name, spreadsheet_id, list_name):
     SERVICE_ACCOUNT_FILE = 'googleapi.json'
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
-    # Create credentials using the service account file and the required scopes
-    creds = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    try:
+        # Create credentials using the service account file and the required scopes
+        creds = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 
-    # Build the Sheets API service using the created credentials
-    service = build('sheets', 'v4', credentials=creds)
+        # Build the Sheets API service using the created credentials
+        service = build('sheets', 'v4', credentials=creds)
 
-    # Access the spreadsheet and get the values from the specified range
-    sheet = service.spreadsheets()
-    f = open(f'{file_name}.csv', "r")
-    values = [r for r in csv.reader(f)]
-    result = sheet.values().update(spreadsheetId=spreadsheet_id,
-                                range=list_name, valueInputOption="USER_ENTERED", body={"values": values}).execute()
-    return 'analytics updated'
+        # Open the CSV file and read its contents
+        with open(f'{file_name}.csv', "r") as f:
+            values = [row for row in csv.reader(f)]
+
+        # Prepare the request body and update the sheet
+        body = {"values": values}
+        result = service.spreadsheets().values().update(
+            spreadsheetId=spreadsheet_id,
+            range=list_name,
+            valueInputOption="USER_ENTERED",
+            body=body
+        ).execute()
+
+        return 'Analytics updated successfully.'
+    except Exception as e:
+        # Optionally, log the error or pass it silently
+        print(f"An error occurred: {e}")
+        pass  # Or use 'return "An error occurred."' to notify the caller
 
 
 
