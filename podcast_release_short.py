@@ -432,7 +432,7 @@ def main():
     new_records_df = pd.DataFrame(records)
 
     # Specify the filename and path for the Excel file
-    filename = 'episode_creation_log.xlsx'
+    filename = 'episode_creation_log.csv'
 
     # Check if the file exists
     if os.path.exists(filename):
@@ -444,7 +444,7 @@ def main():
         updated_df = new_records_df
 
     # Write the updated DataFrame to the Excel file
-    updated_df.to_excel(filename, index=False)
+    updated_df.to_csv(filename, index=False)
 
 
 main()
