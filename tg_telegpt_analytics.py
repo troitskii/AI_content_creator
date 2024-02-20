@@ -43,7 +43,7 @@ def update_analytics_spreadsheet(file_name, spreadsheet_id, list_name):
     except Exception as e:
         # Optionally, log the error or pass it silently
         print(f"An error occurred: {e}")
-        pass  # Or use 'return "An error occurred."' to notify the caller
+        pass  # Or use 'return "An error occurred."' to notify the caller yes
 
 
 
