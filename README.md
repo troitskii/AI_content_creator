@@ -20,4 +20,4 @@ This project enables massive content creation and distribution with OpenAI and G
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the GPL License. 
